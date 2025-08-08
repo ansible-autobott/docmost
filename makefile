@@ -9,8 +9,8 @@ COMMIT_SHA_SHORT ?= $(shell git rev-parse --short=12 HEAD)
 #==========================================================================================
 ##@ Docker
 #==========================================================================================
-docker-build: ## build a snapshot release within docker
-	@docker build ./ -t docmost:${COMMIT_SHA_SHORT} -f ./Dockerfile
+
+
 
 check_env: # check for needed envs
 ifndef GITHUB_USER
@@ -20,7 +20,7 @@ ifndef GITHUB_TOKEN
 	$(error GITHUB_TOKEN is undefined, create one with repo permissions here: https://github.com/settings/tokens/new?scopes=repo,write%3Apackages)
 endif
 
-docker-login: check_env ## Login to the GH docker registry using your own access token (idempotent)
+docker-login: check_env ## Login to the GH docker registry using your own access token
 	@echo ">> Checking if already logged in to ghcr.io..."
 	@if grep -q '"ghcr.io"' $$HOME/.docker/config.json 2>/dev/null; then \
 		echo ">> Already logged in to ghcr.io"; \
@@ -30,10 +30,13 @@ docker-login: check_env ## Login to the GH docker registry using your own access
 		echo ">> Login successful!"; \
 	fi
 
-docker-logout:
+docker-logout: ## Logout of docker registry
 	@echo ">> Logging out from GitHub Container Registry (ghcr.io)..."
 	@docker logout ghcr.io
 	@echo ">> Logged out successfully."
+
+docker-build: ## build a snapshot release within docker
+	@docker build ./ -t ghcr.io/ansible-autobott/docmost:latest -t ghcr.io/ansible-autobott/docmost:${COMMIT_SHA_SHORT} -f ./Dockerfile
 
 docker-check-login:
 	@echo ">> Checking if logged in to ghcr.io..."
@@ -45,14 +48,9 @@ docker-check-login:
 		exit 1; \
 	fi
 
-
 docker-push: docker-check-login docker-build ## build and push the docker image to GH registry
-
-
-
-
-
-
+	@docker push ghcr.io/ansible-autobott/docmost:latest
+	@docker push ghcr.io/ansible-autobott/docmost:${COMMIT_SHA_SHORT}
 
 release: check_env check-branch check-git-clean verify ## release a new version, call with version="v1.2.3", make sure to have valid GH token
 	@[ "${version}" ] || ( echo ">> version is not set, mausage: make release version=\"v1.2.3\" "; exit 1 )
