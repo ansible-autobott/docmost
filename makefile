@@ -52,19 +52,6 @@ docker-push: docker-check-login docker-build ## build and push the docker image 
 	@docker push ghcr.io/ansible-autobott/docmost:latest
 	@docker push ghcr.io/ansible-autobott/docmost:${COMMIT_SHA_SHORT}
 
-release: check_env check-branch check-git-clean verify ## release a new version, call with version="v1.2.3", make sure to have valid GH token
-	@[ "${version}" ] || ( echo ">> version is not set, mausage: make release version=\"v1.2.3\" "; exit 1 )
-	@git tag -d $(version) || true
-	@git tag -a $(version) -m "Release version: $(version)"
-	@git push --delete origin $(version) || true
-	@git push origin $(version) || true
-	@goreleaser release --clean
-
-
-
-
-
-
 .PHONY: check-git-clean
 check-git-clean: # check if git repo is clen
 	@git diff --quiet
